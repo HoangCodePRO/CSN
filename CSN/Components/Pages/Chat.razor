@@ -1,0 +1,372 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using CSN.Models
+@using Radzen
+@using Radzen.Blazor
+@inject dbCSNChatContext dbcontext
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+@inject NotificationService NotificationService
+
+
+<PageTitle>Chat</PageTitle>
+
+<div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="search-container">
+                <input type="text" placeholder="Search..." class="search-bar" />
+                <RadzenIcon Icon="search" class="search-icon" />
+                <div class="sidebar-actions">
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <!-- Các hành động khác nếu cần -->
+            </div>
+        </div>
+        <div class="chat-rooms">
+            <ul>
+                @foreach (var room in chatRooms)
+                {
+                    <li @onclick="() => SelectRoom(room)" class="@(room.Name == CurrentRoom ? "active" : "")">
+                        <RadzenIcon Icon="chat" class="icon" />
+                        <span class="name">@room.Name</span>
+                    </li>
+                }
+            </ul>
+        </div>
+
+    </div>
+
+
+    <!-- Chat Container -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>@CurrentRoom</h2>
+        </div>
+        <div class="chat-box">
+            @foreach (var message in tinnhans)
+            {
+                <div class="message @(message.User == tinnhan.User ? "own" : "other")">
+                    <strong>@message.User:</strong> @message.Content
+                </div>
+            }
+        </div>
+        <div class="chat-input">
+            <input type="text" placeholder="Your name" class="input-name" @bind="tinnhan.User" />
+            <input type="text" placeholder="Type a message..." class="input-message" @bind="tinnhan.Content" />
+            <button class="send-button" @onclick="Send" disabled="@(!IsConnected)">Send</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Toàn bộ ứng dụng */
+    .app-container {
+        display: flex;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: 300px;
+        background: #5499c7 ;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        height: 100%;
+    }
+
+
+    .sidebar-header {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background: #5499c7;
+        gap: 10px;
+    }
+
+    .search-container {
+        position: relative; /* Để các thành phần con sử dụng vị trí tương đối với container */
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .search-bar {
+        flex-grow: 1;
+        padding: 10px 10px 10px 35px; /* Thêm không gian cho biểu tượng */
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px; /* Đặt biểu tượng nằm trong khoảng padding của input */
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+        pointer-events: none; /* Để người dùng không thể tương tác với biểu tượng */
+    }
+
+
+    .sidebar-actions {
+        position: absolute;
+    }
+
+    .search-bar {
+        position: relative;
+    }
+
+    .sidebar-actions button {
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        margin-left: 5px;
+    }
+
+    .chat-rooms ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .chat-rooms ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .chat-rooms li {
+        padding: 15px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.2s;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chat-rooms ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .chat-rooms li {
+        padding: 15px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Hiệu ứng lún xuống ban đầu */
+    }
+
+        .chat-rooms li.active {
+            background-color: #28a745;
+            color: #fff;
+            transform: translateY(2px); /* Lún xuống nhẹ khi phòng được chọn */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Tăng cường hiệu ứng lún xuống */
+        }
+
+        .chat-rooms li:hover {
+            background-color: #f0f0f0;
+            transform: translateY(2px); /* Lún xuống khi hover */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Tăng cường hiệu ứng lún xuống khi hover */
+        }
+
+        .chat-rooms li .icon {
+            font-size: 18px;
+            color: #777;
+        }
+
+        .chat-rooms li.active .icon {
+            color: #777;
+        }
+
+        .chat-rooms li .name {
+            flex-grow: 1;
+            color: #333;
+        }
+
+
+
+    /* Chat Container */
+    .chat-container {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        height: 100%;
+    }
+
+    .chat-header {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .chat-box {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-input {
+        display: flex;
+        border-top: 1px solid #ddd;
+        padding: 10px;
+        gap: 10px;
+        background-color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+
+    .input-name, .input-message {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .send-button {
+        padding: 10px 20px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        .send-button:hover {
+            background-color: #218838;
+        }
+
+    .message {
+        margin-bottom: 12px;
+        padding: 12px 16px;
+        border-radius: 15px;
+        max-width: 40%;
+        word-wrap: break-word;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+
+        .message.own {
+            background-color: #e6ffe6;
+            text-align: right;
+            margin-left: auto;
+            border: 1px solid #b3e6b3;
+        }
+
+            .message.own:hover {
+                background-color: #ccffcc;
+                box-shadow: 0 4px 8px rgba(0, 128, 0, 0.2);
+            }
+
+        /* Tin nhắn của người khác */
+        .message.other {
+            background-color: #f1f1f1;
+            text-align: left;
+            margin-right: auto;
+            border: 1px solid #ccc;
+        }
+
+            .message.other:hover {
+                background-color: #e6e6e6;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+</style>
+
+@code {
+    private HubConnection? hubConnection;
+    private List<tbMsg> tinnhans = new List<tbMsg>();
+    private List<ChatRoom> chatRooms = new();
+    private tbMsg tinnhan = new tbMsg();
+    private string CurrentRoom = "General";
+    private bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        hubConnection.On<string, string>("ReceiveMessage", async (user, message) =>
+        {
+            tinnhans.Add(new tbMsg { User = user, Content = message });
+            await InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+        tinnhans = await dbcontext.tbMsgs.ToListAsync();
+
+        chatRooms = new List<ChatRoom>
+        {
+            new ChatRoom { Id = 1, Name = "General" },
+            new ChatRoom { Id = 2, Name = "Tech" },
+            new ChatRoom { Id = 3, Name = "Sports" }
+        };
+    }
+
+    private async Task Send()
+    {
+        if (string.IsNullOrWhiteSpace(tinnhan.User) || string.IsNullOrWhiteSpace(tinnhan.Content))
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", "Please enter both name and message!");
+            return;
+        }
+
+        await hubConnection!.SendAsync("SendMessage", tinnhan.User, tinnhan.Content);
+        await dbcontext.tbMsgs.AddAsync(tinnhan);
+        await dbcontext.SaveChangesAsync();
+
+        tinnhan.Content = string.Empty;
+    }
+
+    private void SelectRoom(ChatRoom room)
+    {
+        CurrentRoom = room.Name;
+        tinnhans.Clear(); // Clear messages for the new room
+    }
+
+    private void CreateRoom()
+    {
+        if (!string.IsNullOrEmpty(CurrentRoom))
+        {
+            chatRooms.Add(new ChatRoom { Name = CurrentRoom });
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    public class ChatRoom
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+    }
+}

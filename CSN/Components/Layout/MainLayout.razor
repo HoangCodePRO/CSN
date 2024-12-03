@@ -1,0 +1,147 @@
+﻿@inherits LayoutComponentBase
+
+
+<div class="layout-container">
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-header">
+            <RadzenIcon Icon="account_circle" class="menu-icon" />
+            <span>User</span>
+        </div>
+        <ul class="navbar-menu">
+            <li class="menu-item">
+                <RadzenIcon Icon="home" class="menu-icon" />
+                <span>Home</span>
+            </li>
+            <li class="menu-item">
+                <RadzenIcon Icon="chat  " class="menu-icon" />
+                <span>Chat</span>
+            </li>
+            <li class="menu-item">
+                <RadzenIcon Icon="settings" class="menu-icon" />
+                <span>Settings</span>
+            </li>
+        </ul>
+
+    </div>
+
+    <!-- Main Content -->
+    <main style="margin: 0; padding: 0;">
+        @Body
+    </main>
+</div>
+
+<style>
+    .layout-container {
+        display: flex;
+        height: 100vh;
+    }
+
+    .navbar {
+        width: 80px;
+        background-color: #333;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 0;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .user-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #555;
+        margin-bottom: 10px;
+    }
+
+    .navbar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        width: 100%;
+    }
+
+    .menu-item {
+        display: flex; /* Sử dụng flexbox */
+        flex-direction: column; /* Bố cục dọc */
+        align-items: center; /* Căn giữa theo chiều ngang */
+        justify-content: center; /* Căn giữa theo chiều dọc */
+        gap: 5px; /* Khoảng cách giữa icon và chữ */
+        padding: 15px 0;
+        cursor: pointer;
+        color: #bbb;
+        transition: background-color 0.3s, color 0.3s;
+        text-align: center; /* Căn giữa văn bản */
+    }
+
+        .menu-item:hover {
+            background-color: #444;
+            color: #fff;
+        }
+
+        .menu-item.active {
+            background-color: #555;
+            color: #fff;
+        }
+
+    .menu-icon {
+        font-size: 40px; /* Kích thước biểu tượng */
+    }
+
+    .span {
+        font-size: 40px;
+    }
+
+    .navbar-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center; /* Thêm để căn giữa */
+        padding: 15px 0;
+        cursor: pointer; /* Thêm con trỏ chuột dạng nhấp */
+        transition: background-color 0.3s, color 0.3s; /* Hiệu ứng chuyển đổi */
+        color: #bbb; /* Màu chữ ban đầu */
+        width:100%;
+    }
+
+        .navbar-header:hover {
+            background-color: #444;
+            color: #fff;
+        }
+
+        .navbar-header.active {
+            background-color: #555;
+            color: #fff;
+        }
+
+    .user-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #555;
+        margin-bottom: 10px;
+        transition: background-color 0.3s; /* Hiệu ứng chuyển đổi màu */
+    }
+
+    .navbar-header:hover .user-icon {
+        background-color: #444; /* Màu nền khi hover */
+    }
+
+    .navbar-header.active .user-icon {
+        background-color: #555; /* Màu nền khi active */
+    }
+
+</style>
+
+@code {
+    private string userName = "Guest"; // Hoặc lấy từ trạng thái đăng nhập của ứng dụng
+}
